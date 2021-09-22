@@ -4,53 +4,75 @@
 2 Obter o endereço do usuário pelo Id
 */
 
-function getUser(callback) {
-  setTimeout(() => {
-    return callback(null, {
-      id: 1,
-      name: 'Aladin',
-      birthDate: new Date()
-    })
-  }, 1000);
+//Import Node.js internal module
+import util from "util";
+// converts a function to a Promise
+const getAddressAsync = util.promisify(getAddress);
+
+function getUser() {
+  /* Failed => reject 
+  * Success => resolve
+  */
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      return resolve({
+        id: 1,
+        name: 'Aladin',
+        birthDate: new Date()
+      })
+    }, 1000);
+  });
 }
 
-function getPhoneNumber(userId, callback) {
-  setTimeout(() => {
-    return callback(null , {
-      phone: '1199899',
-      ddd: 11
-    })
-  }, 2000);
+function getPhoneNumber(userId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      return resolve({
+        phone: '1199899',
+        ddd: 11
+      });
+    }, 2000);
+  });
 }
 
 function getAddress(userId, callback) {
-  setTimeout(() => {
-    return callback(null, {
-      rua: 'dos bobos',
-      numero: 0
-    })
-  }, 2000)
+    setTimeout(() => {
+      return callback(null, {
+        street: 'dos bobos',
+        number: 0
+      });
+    }, 2000);
 }
 
-// Callback
-/* function handleUser(error, user) {
-  console.log(`Usuario ${user}`);
-}
- */
-getUser(handleUser = (userError, user) => {
-  // null || "" || 0 === false
-  if(userError){
-    throw userError;
-  }
-  getPhoneNumber(user.id, handlePhone = (phoneError, phone) => {
-    if (phoneError) {
-      console.error(phoneError);
-    }
-    getAddress(user.id, handleAddress = (addressError, address) => {
-      if (addressError) {
-        console.error(addressError);
+const userPromise = getUser();
+/* 
+* Success => .then()
+* Error => .catch()
+* Pipe: user -> phone -> user + phone
+*/
+
+userPromise
+  .then((user) => {
+    return getPhoneNumber(user.id)
+    .then((phone) => {
+      return {
+          ...user,
+          phone
       }
-      console.log(`Nome: ${user.name}\nPhone Number: (${phone.ddd})${phone.phone}\nAddress: Rua ${address.rua} nº${address.numero}`);
     })
+  })
+  .then((user) => {
+      const address = getAddressAsync(user.id)
+      return address.then((address) => {
+        return {
+          ...user,
+          address
+        }
+      })
+  })
+  .then((user) => {
+    console.log(`Nome: ${user.name}\nData de Aniversário: ${user.birthDate}\nTelefone: (${user.phone.ddd})${user.phone.phone}\nEndereço: Rua ${user.address.street} nº${user.address.number}`);
+  })
+  .catch((error) => {
+    console.error("Error ->", error);
   });
-});
